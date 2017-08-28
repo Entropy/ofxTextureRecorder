@@ -146,7 +146,7 @@ private:
 
 
 #if OFX_VIDEO_RECORDER
-	ofxVideoRecorder videoRecorder;
+	std::unique_ptr<ofxVideoRecorder> videoRecorder;
 #endif
 #if OFX_HPVLIB
 	HPV::HPVCreator hpvCreator;

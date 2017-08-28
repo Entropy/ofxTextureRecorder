@@ -94,7 +94,7 @@ void ofxTextureRecorder::setup(const ofxTextureRecorder::VideoSettings & setting
 	pixelFormat = settings.pixelFormat;
 	folderPath = "";
 	glType = settings.glType;
-	maxMemoryUsage = settings.maxMemoryUsage;
+	maxMemoryUsage = settings.maxMemoryUsage / 2;
 
 	frame = 0;
 	firstFrame = true;
@@ -172,8 +172,10 @@ void ofxTextureRecorder::setup(const ofxTextureRecorder::VideoSettings & setting
 	<< " -b:v " << settings.bitrate
 	<< " \"" << absFilePath << "\"";
 
-	videoRecorder.setupCustomOutput(width, height, settings.fps, 0, 0, outputSettings.str(), false, false);
-	videoRecorder.start();
+	auto maxFrames = settings.maxMemoryUsage / bufferSize / 2;
+	videoRecorder.reset(new ofxVideoRecorder(maxFrames));
+	videoRecorder->setupCustomOutput(width, height, settings.fps, 0, 0, outputSettings.str(), false, false);
+	videoRecorder->start();
 	createThreads(1);
 #endif
 }
@@ -294,7 +296,7 @@ void ofxTextureRecorder::stopThreads(){
 	saveThread.join();
 #if OFX_VIDEO_RECORDER
 	if(isVideo){
-		videoRecorder.close();
+		videoRecorder->close();
 	}
 #endif
 #if OFX_HPVLIB
@@ -449,7 +451,7 @@ void ofxTextureRecorder::createThreads(size_t numThreads){
 							auto then = ofGetElapsedTimeMicros();
 							rgb8Pixels = frame.pixels;
 							rgb8Pixels.setNumChannels(3);
-							videoRecorder.addFrame(rgb8Pixels);
+							videoRecorder->addFrame(rgb8Pixels);
 							returnPixelsChannel.send(std::move(frame.pixels));
 							auto now = ofGetElapsedTimeMicros();
 							encodingTime = halfDecodingTime * 0.9 + (now - then) * 0.1;
@@ -462,7 +464,7 @@ void ofxTextureRecorder::createThreads(size_t numThreads){
 							auto then = ofGetElapsedTimeMicros();
 							rgb8Pixels = frame.pixels;
 							rgb8Pixels.setNumChannels(3);
-							videoRecorder.addFrame(rgb8Pixels);
+							videoRecorder->addFrame(rgb8Pixels);
 							returnShortPixelsChannel.send(std::move(frame.pixels));
 							auto now = ofGetElapsedTimeMicros();
 							encodingTime = halfDecodingTime * 0.9 + (now - then) * 0.1;
@@ -475,7 +477,7 @@ void ofxTextureRecorder::createThreads(size_t numThreads){
 							auto then = ofGetElapsedTimeMicros();
 							rgb8Pixels =frame.pixels;
 							rgb8Pixels.setNumChannels(3);
-							videoRecorder.addFrame(rgb8Pixels);
+							videoRecorder->addFrame(rgb8Pixels);
 							returnFloatPixelsChannel.send(std::move(frame.pixels));
 							auto now = ofGetElapsedTimeMicros();
 							encodingTime = halfDecodingTime * 0.9 + (now - then) * 0.1;
